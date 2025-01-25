@@ -1,5 +1,7 @@
 package gr.aeub.cf.ticketz.controller;
 
+import gr.aeub.cf.ticketz.dto.JwtResponseDTO;
+import gr.aeub.cf.ticketz.dto.LoginRequestDTO;
 import gr.aeub.cf.ticketz.dto.UserDTO;
 import gr.aeub.cf.ticketz.dto.UserRegistrationRequestDTO;
 import gr.aeub.cf.ticketz.model.User;
@@ -99,4 +101,6 @@ public class UserController {
                 request.getEmail(), request.getPassword());
         return ResponseEntity.ok("User registered successfully!");
     }
+
+
 }

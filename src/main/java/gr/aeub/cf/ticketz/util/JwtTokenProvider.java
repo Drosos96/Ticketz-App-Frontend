@@ -6,12 +6,13 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import org.springframework.stereotype.Component;
 
 import java.util.Date;
+import java.util.List;
 
 @Component
 public class JwtTokenProvider {
 
-    private final String jwtSecret = "yourSecretKey"; // Χρησιμοποίησε ένα ισχυρό κλειδί
-    private final long jwtExpirationMs = 86400000; // 1 μέρα σε milliseconds
+    private final String jwtSecret = "drosososos";
+    private final long jwtExpirationMs = 86400000;
 
     // Δημιουργία JWT Token
     public String generateToken(String username) {
@@ -41,4 +42,15 @@ public class JwtTokenProvider {
             return false;
         }
     }
+
+    public String generateToken(String username, List<String> roles) {
+        return Jwts.builder()
+                .setSubject(username)
+                .claim("admin, user", roles) // Πρόσθεσε τους ρόλους εδώ
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + jwtExpirationMs))
+                .signWith(SignatureAlgorithm.HS512, jwtSecret)
+                .compact();
+    }
+
 }

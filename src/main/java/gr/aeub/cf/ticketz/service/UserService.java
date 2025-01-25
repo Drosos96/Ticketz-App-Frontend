@@ -1,6 +1,7 @@
 package gr.aeub.cf.ticketz.service;
 
 import gr.aeub.cf.ticketz.exception.InvalidPasswordException;
+import gr.aeub.cf.ticketz.exception.ResourceNotFoundException;
 import gr.aeub.cf.ticketz.exception.UserNotFoundException;
 import gr.aeub.cf.ticketz.model.Role;
 import gr.aeub.cf.ticketz.model.User;
@@ -8,7 +9,11 @@ import gr.aeub.cf.ticketz.model.UserRole;
 import gr.aeub.cf.ticketz.repository.RoleRepository;
 import gr.aeub.cf.ticketz.repository.UserRepository;
 import gr.aeub.cf.ticketz.repository.UserRoleRepository;
+import gr.aeub.cf.ticketz.util.JwtTokenProvider;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -23,6 +28,9 @@ public class UserService {
     private final RoleRepository roleRepository;
     private final UserRoleRepository userRoleRepository;
     private final PasswordEncoder passwordEncoder;
+    private final AuthenticationManager authenticationManager;
+    private final JwtTokenProvider jwtTokenProvider;
+
 
     // Δημιουργία χρήστη
     public User createUser(User user) {
@@ -66,29 +74,23 @@ public class UserService {
         userRepository.save(user);
     }
 
-    // Ανάθεση ρόλου σε χρήστη
     public void assignRoleToUser(Integer userId, String roleName) {
         User user = findById(userId);
 
         Role role = roleRepository.findByName(roleName)
                 .orElseThrow(() -> new IllegalArgumentException("Role not found: " + roleName));
 
-        // Έλεγχος αν ο χρήστης έχει ήδη τον ρόλο
-        Optional<UserRole> existingUserRole = userRoleRepository.findAll().stream()
-                .filter(ur -> ur.getUser().getId().equals(userId) && ur.getRole().getId().equals(role.getId()))
-                .findFirst();
-
-        if (existingUserRole.isPresent()) {
+        if (userRoleRepository.existsByUserIdAndRoleId(userId, role.getId())) {
             throw new IllegalArgumentException("User already has the role: " + roleName);
         }
 
-        // Δημιουργία νέου UserRole
         UserRole userRole = new UserRole();
         userRole.setUser(user);
         userRole.setRole(role);
 
         userRoleRepository.save(userRole);
     }
+
 
     // Αναζήτηση χρηστών με κριτήρια
     public List<User> searchUsers(String username, String email) {
@@ -102,31 +104,33 @@ public class UserService {
         return userRepository.findAll();
     }
 
-    public User registerUser(String firstname, String lastname, String username, String email, String password) {
-        // Έλεγχος αν το username είναι μοναδικό
-        if (userRepository.existsByUsername(username)) {
-            throw new IllegalArgumentException("Username already exists.");
-        }
-
-        // Έλεγχος αν το email είναι μοναδικό
-        if (userRepository.existsByEmail(email)) {
-            throw new IllegalArgumentException("Email already exists.");
-        }
-
-        // Δημιουργία νέου χρήστη
+    public void registerUser(String firstname, String lastname, String username, String email, String password) {
         User user = new User();
         user.setFirstname(firstname);
         user.setLastname(lastname);
         user.setUsername(username);
         user.setEmail(email);
-        user.setPassword(passwordEncoder.encode(password));
+        user.setPassword(password); // Χρησιμοποίησε κρυπτογραφημένο κωδικό αν είναι απαραίτητο
 
-        // Απόδοση εξ ορισμού ρόλου ROLE_USER
-        Role userRole = roleRepository.findByName("ROLE_USER")
-                .orElseThrow(() -> new IllegalStateException("Default role not found."));
-        user.setRole(userRole);
-
-        return userRepository.save(user);
+        registerUser(user);
     }
+
+    private void registerUser(User user) {
+    }
+
+
+    public String authenticateAndGenerateToken(String username, String password) {
+        authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, password));
+        return jwtTokenProvider.generateToken(username);
+    }
+
+    public boolean usernameExists(String username) {
+        return userRepository.existsByUsername(username);
+    }
+
+    public boolean emailExists(String email) {
+        return userRepository.existsByEmail(email);
+    }
+
 
 }
