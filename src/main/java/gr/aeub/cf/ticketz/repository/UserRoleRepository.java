@@ -9,7 +9,5 @@ import java.util.List;
 @Repository
 public interface UserRoleRepository extends JpaRepository<UserRole, Integer> {
 
-    boolean existsByUserIdAndRoleId(Integer userId, Integer roleId);
-
-    static List<UserRole> findByUserId(Integer userId); // Αφαιρείται το static
+    List<UserRole> findByUserId(Integer userId);
 }

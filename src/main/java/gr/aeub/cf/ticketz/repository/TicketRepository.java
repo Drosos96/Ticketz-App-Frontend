@@ -1,7 +1,6 @@
 package gr.aeub.cf.ticketz.repository;
 
 import gr.aeub.cf.ticketz.model.Ticket;
-import gr.aeub.cf.ticketz.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

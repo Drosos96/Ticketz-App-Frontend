@@ -2,21 +2,18 @@ package gr.aeub.cf.ticketz.controller;
 
 import gr.aeub.cf.ticketz.dto.JwtResponseDTO;
 import gr.aeub.cf.ticketz.dto.LoginRequestDTO;
-import gr.aeub.cf.ticketz.dto.LoginResponseDTO;
+import gr.aeub.cf.ticketz.model.User;
+import gr.aeub.cf.ticketz.service.UserService;
 import gr.aeub.cf.ticketz.util.JwtTokenProvider;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -25,31 +22,23 @@ public class AuthController {
 
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;
+    private final UserService userService;
 
     @PostMapping("/login")
-    public ResponseEntity<?> authenticateUser(@RequestBody LoginRequestDTO loginRequest) {
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        loginRequest.getUsername(),
-                        loginRequest.getPassword()
-                )
-        );
+    public ResponseEntity<JwtResponseDTO> login(@RequestBody @Valid LoginRequestDTO loginRequest) {
+        String username = loginRequest.getUsername();
+        String password = loginRequest.getPassword();
 
-        SecurityContextHolder.getContext().setAuthentication(authentication);
+        authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, password));
 
-        String jwt = jwtTokenProvider.generateToken(authentication.getName(), getRoles(authentication));
-        JwtResponseDTO jwtResponse = new JwtResponseDTO(jwt, authentication.getName(), getRoles(authentication));
+        User user = userService.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
 
-        return ResponseEntity.ok(jwtResponse);
+        List<String> roles = userService.getUserRoles(user.getId());
+
+        String token = jwtTokenProvider.generateToken(username, roles);
+
+        JwtResponseDTO response = new JwtResponseDTO(token);
+        return ResponseEntity.ok(response);
     }
-
-    private List<String> getRoles(Authentication authentication) {
-        return authentication.getAuthorities()
-                .stream()
-                .map(GrantedAuthority::getAuthority)
-                .toList();
-    }
-
-
-
 }

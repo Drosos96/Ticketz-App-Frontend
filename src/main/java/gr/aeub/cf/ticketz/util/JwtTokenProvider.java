@@ -13,19 +13,16 @@ public class JwtTokenProvider {
 
     private final String secretKey = "secretKey123";
 
-    // Δημιουργία JWT Token
     public String generateToken(String username, List<String> roles) {
         return Jwts.builder()
                 .setSubject(username)
                 .claim("roles", roles)
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + 86400000)) // 1 μέρα
+                .setExpiration(new Date(System.currentTimeMillis() + 86400000)) // 1 ημέρα
                 .signWith(SignatureAlgorithm.HS512, secretKey)
                 .compact();
     }
 
-
-    // Εξαγωγή username από το token
     public String getUsernameFromToken(String token) {
         try {
             Claims claims = Jwts.parser()
@@ -39,7 +36,6 @@ public class JwtTokenProvider {
         }
     }
 
-    // Έλεγχος αν το token είναι έγκυρο
     public boolean validateToken(String token) {
         try {
             Jwts.parser().setSigningKey(secretKey).parseClaimsJws(token);

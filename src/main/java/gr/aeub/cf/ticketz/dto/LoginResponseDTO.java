@@ -4,20 +4,9 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 
 @Data
+@AllArgsConstructor
 public class LoginResponseDTO {
 
     private String token;
-
-    public LoginResponseDTO(String token) {
-        this.token = token;
-    }
-
-    // Getter
-    public String getToken() {
-        return token;
-    }
-
-    public void setToken(String token) {
-        this.token = token;
-    }
 }
+

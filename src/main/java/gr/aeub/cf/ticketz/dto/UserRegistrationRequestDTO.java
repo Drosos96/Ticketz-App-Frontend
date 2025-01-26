@@ -28,9 +28,4 @@ public class UserRegistrationRequestDTO {
     @NotBlank
     @Size(min = 6, max = 100)
     private String password;
-
-    @NotBlank
-    public String getRole() {
-        return "ROLE_USER";
-    }
 }

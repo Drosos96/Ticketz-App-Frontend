@@ -13,18 +13,6 @@ public interface UserRepository extends JpaRepository<User, Integer> {
     // Αναζήτηση χρήστη με βάση το username
     Optional<User> findByUsername(String username);
 
-    // Αναζήτηση χρήστη με βάση το email
-    Optional<User> findByEmail(String email);
-
-    // Επιστροφή true αν υπάρχει το username
-    boolean existsByUsername(String username);
-
-    // Επιστροφή true αν υπάρχει το email
-    boolean existsByEmail(String email);
-
-    // Αναζήτηση χρηστών με βάση το όνομα και το επώνυμο
-    Optional<User> findByFirstnameAndLastname(String firstname, String lastname);
-
     // Αναζήτηση χρηστών με βάση το username που περιέχει συγκεκριμένη ακολουθία χαρακτήρων (case insensitive)
     List<User> findByUsernameContaining(String username);
 
