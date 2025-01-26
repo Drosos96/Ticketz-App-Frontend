@@ -1,7 +1,6 @@
 package gr.aeub.cf.ticketz.service;
 
 import gr.aeub.cf.ticketz.exception.InvalidPasswordException;
-import gr.aeub.cf.ticketz.exception.ResourceNotFoundException;
 import gr.aeub.cf.ticketz.exception.UserNotFoundException;
 import gr.aeub.cf.ticketz.model.Role;
 import gr.aeub.cf.ticketz.model.User;
@@ -10,15 +9,15 @@ import gr.aeub.cf.ticketz.repository.RoleRepository;
 import gr.aeub.cf.ticketz.repository.UserRepository;
 import gr.aeub.cf.ticketz.repository.UserRoleRepository;
 import gr.aeub.cf.ticketz.util.JwtTokenProvider;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -91,7 +90,6 @@ public class UserService {
         userRoleRepository.save(userRole);
     }
 
-
     // Αναζήτηση χρηστών με κριτήρια
     public List<User> searchUsers(String username, String email) {
         if (username != null && email != null) {
@@ -104,13 +102,14 @@ public class UserService {
         return userRepository.findAll();
     }
 
-    public void registerUser(String firstname, String lastname, String username, String email, String password) {
+    public void registerUser(String firstname, String lastname, String username, String email, String password, String role) {
         User user = new User();
         user.setFirstname(firstname);
         user.setLastname(lastname);
         user.setUsername(username);
         user.setEmail(email);
-        user.setPassword(password); // Χρησιμοποίησε κρυπτογραφημένο κωδικό αν είναι απαραίτητο
+        user.setPassword(password);// Χρησιμοποίησε κρυπτογραφημένο κωδικό αν είναι απαραίτητο
+        user.getRoles();
 
         registerUser(user);
     }
@@ -118,19 +117,32 @@ public class UserService {
     private void registerUser(User user) {
     }
 
-
     public String authenticateAndGenerateToken(String username, String password) {
         authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, password));
-        return jwtTokenProvider.generateToken(username);
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
+        // Χρησιμοποιήστε το instance του repository
+        List<String> roles = userRoleRepository.findByUserId(user.getId())
+                .stream()
+                .map(userRole -> userRole.getRole().getName())
+                .collect(Collectors.toList());
+        return jwtTokenProvider.generateToken(username, roles);
     }
 
     public boolean usernameExists(String username) {
         return userRepository.existsByUsername(username);
     }
 
-    public boolean emailExists(String email) {
-        return userRepository.existsByEmail(email);
+
+    public User findByUsername(String username) {
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new UserNotFoundException("User not found with username: " + username));
     }
 
-
+    public List<String> getUserRoles(Integer userId) {
+        return userRoleRepository.findByUserId(userId) // Χρησιμοποιούμε το instance
+                .stream()
+                .map(userRole -> userRole.getRole().getName())
+                .collect(Collectors.toList());
+    }
 }

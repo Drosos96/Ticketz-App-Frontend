@@ -11,46 +11,42 @@ import java.util.List;
 @Component
 public class JwtTokenProvider {
 
-    private final String jwtSecret = "drosososos";
-    private final long jwtExpirationMs = 86400000;
+    private final String secretKey = "secretKey123";
 
     // Δημιουργία JWT Token
-    public String generateToken(String username) {
+    public String generateToken(String username, List<String> roles) {
         return Jwts.builder()
                 .setSubject(username)
+                .claim("roles", roles)
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + jwtExpirationMs))
-                .signWith(SignatureAlgorithm.HS512, jwtSecret)
+                .setExpiration(new Date(System.currentTimeMillis() + 86400000)) // 1 μέρα
+                .signWith(SignatureAlgorithm.HS512, secretKey)
                 .compact();
     }
 
+
     // Εξαγωγή username από το token
     public String getUsernameFromToken(String token) {
-        Claims claims = Jwts.parser()
-                .setSigningKey(jwtSecret)
-                .parseClaimsJws(token)
-                .getBody();
-        return claims.getSubject();
+        try {
+            Claims claims = Jwts.parser()
+                    .setSigningKey(secretKey)
+                    .parseClaimsJws(token)
+                    .getBody();
+            return claims.getSubject();
+        } catch (Exception e) {
+            System.out.println("Invalid token: " + e.getMessage());
+            return null;
+        }
     }
 
     // Έλεγχος αν το token είναι έγκυρο
     public boolean validateToken(String token) {
         try {
-            Jwts.parser().setSigningKey(jwtSecret).parseClaimsJws(token);
+            Jwts.parser().setSigningKey(secretKey).parseClaimsJws(token);
             return true;
         } catch (Exception e) {
+            System.out.println("Token validation failed: " + e.getMessage());
             return false;
         }
     }
-
-    public String generateToken(String username, List<String> roles) {
-        return Jwts.builder()
-                .setSubject(username)
-                .claim("admin, user", roles) // Πρόσθεσε τους ρόλους εδώ
-                .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + jwtExpirationMs))
-                .signWith(SignatureAlgorithm.HS512, jwtSecret)
-                .compact();
-    }
-
 }

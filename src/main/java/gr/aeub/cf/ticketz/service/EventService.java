@@ -1,5 +1,6 @@
 package gr.aeub.cf.ticketz.service;
 
+import gr.aeub.cf.ticketz.dto.EventDTO;
 import gr.aeub.cf.ticketz.exception.EventNotFoundException;
 import gr.aeub.cf.ticketz.exception.ResourceNotFoundException;
 import gr.aeub.cf.ticketz.model.Event;

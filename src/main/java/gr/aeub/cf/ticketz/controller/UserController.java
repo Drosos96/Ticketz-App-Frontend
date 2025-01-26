@@ -5,6 +5,7 @@ import gr.aeub.cf.ticketz.dto.LoginRequestDTO;
 import gr.aeub.cf.ticketz.dto.UserDTO;
 import gr.aeub.cf.ticketz.dto.UserRegistrationRequestDTO;
 import gr.aeub.cf.ticketz.model.User;
+import gr.aeub.cf.ticketz.repository.UserRoleRepository;
 import gr.aeub.cf.ticketz.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -60,16 +61,24 @@ public class UserController {
     }
 
     @PreAuthorize("hasRole('ADMIN')")
-    @GetMapping
-    public ResponseEntity<List<UserDTO>> searchUsers(
-            @RequestParam(required = false) String username,
-            @RequestParam(required = false) String email) {
-        List<User> users = userService.searchUsers(username, email);
-        List<UserDTO> userDTOs = users.stream()
-                .map(this::toDTO)
-                .collect(Collectors.toList());
-        return ResponseEntity.ok(userDTOs);
+    @PostMapping("/api/auth/login")
+    public ResponseEntity<JwtResponseDTO> login(@RequestBody LoginRequestDTO loginRequest) {
+        String token = userService.authenticateAndGenerateToken(loginRequest.getUsername(), loginRequest.getPassword());
+        User user = userService.findByUsername(loginRequest.getUsername());
+        List<String> roles = userService.getUserRoles(user.getId()); // Καλέστε τη μέθοδο του service
+
+        JwtResponseDTO response = new JwtResponseDTO(token, user.getUsername(), roles);
+        return ResponseEntity.ok(response);
     }
+
+    public List<String> getUserRoles(Integer userId) {
+        return UserRoleRepository.findByUserId(userId)
+                .stream()
+                .map(userRole -> userRole.getRole().getName())
+                .collect(Collectors.toList());
+    }
+
+
 
     private UserDTO toDTO(User user) {
         if (user == null) return null;
@@ -98,7 +107,7 @@ public class UserController {
     @PostMapping("/register")
     public ResponseEntity<String> registerUser(@RequestBody @Valid UserRegistrationRequestDTO request) {
         userService.registerUser(request.getFirstname(), request.getLastname(), request.getUsername(),
-                request.getEmail(), request.getPassword());
+                request.getEmail(), request.getPassword(), request.getRole());
         return ResponseEntity.ok("User registered successfully!");
     }
 

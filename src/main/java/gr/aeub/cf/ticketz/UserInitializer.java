@@ -19,10 +19,38 @@ public class UserInitializer implements CommandLineRunner {
         String adminPassword = "admin123";
 
         if (!userService.usernameExists(adminUsername)) {
-            userService.registerUser("Admin", "User", adminUsername, adminEmail, adminPassword);
+            userService.registerUser(
+                    "Admin",
+                    "User",
+                    adminUsername,
+                    adminEmail,
+                    adminPassword,
+                    "ROLE_ADMIN" // Προσθέτουμε ρόλο Admin
+            );
             System.out.println("Admin user created successfully!");
         } else {
             System.out.println("Admin user already exists.");
         }
+
+        // Δημιουργία κανονικού χρήστη (User1)
+        String user1Username = "user1";
+        String user1Email = "user1@example.com";
+        String user1Password = "password1";
+
+        if (!userService.usernameExists(user1Username)) {
+            userService.registerUser(
+                    "User",
+                    "One",
+                    user1Username,
+                    user1Email,
+                    user1Password,
+                    "ROLE_USER"
+            );
+            System.out.println("User1 created successfully!");
+        } else {
+            System.out.println("User1 already exists.");
+        }
     }
 }
+
+
